@@ -1,0 +1,124 @@
+{
+    "settings": {
+        "influx_url": "http://influxdb:8086",
+        "bucket": "powerwall/kwh",
+        "timezone": "America/Los_Angeles",
+        "supply_priority": [
+            "GRID_SUPPLY",
+            "PW_SUPPLY",
+            "SOLAR_SUPPLY"
+        ],
+        "cost_unit": "$",
+        "energy_unit": "kWh",
+        "rename": {
+            "GRID_SUPPLY": "Grid Import",
+            "GRID_EXPORT": "Solar Export",
+            "SELF_PW_NET_OF_GRID": "Battery Usage",
+            "SELF_SOLAR_PLUS_RES": "Solar Self-Use"
+        },
+        "resample": true,
+        "week_anchor": "MONTH",
+        "year_anchor": "JAN"
+    },
+    "plans": [
+        {
+            "name": "PGE-TOU-C-BayArea",
+            "report": [
+                "GRID_SUPPLY",
+                "GRID_EXPORT",
+                "SELF_PW_NET_OF_GRID",
+                "SELF_SOLAR_PLUS_RES"
+            ],
+            "agent": "Simple",
+            "seasons": {
+                "Summer": [
+                    {
+                        "schedule": "All-Days",
+                        "days": [0, 1, 2, 3, 4, 5, 6],
+                        "periods": {
+                            "00:00": "Off-Peak",
+                            "16:00": "Peak",
+                            "21:00": "Off-Peak"
+                        }
+                    }
+                ],
+                "Winter": [
+                    {
+                        "schedule": "All-Days",
+                        "days": [0, 1, 2, 3, 4, 5, 6],
+                        "periods": {
+                            "00:00": "Off-Peak",
+                            "16:00": "Peak",
+                            "21:00": "Off-Peak"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "calendar": {
+        "2024-06-01": {
+            "plan": "PGE-TOU-C-BayArea",
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.49,
+                    "GRID_EXPORT": 0.49,
+                    "SELF_PW_NET_OF_GRID": 0.49,
+                    "SELF_SOLAR_PLUS_RES": 0.49,
+                    "SUPPLY_CHARGE": -0.06575
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.39,
+                    "GRID_EXPORT": 0.39,
+                    "SELF_PW_NET_OF_GRID": 0.39,
+                    "SELF_SOLAR_PLUS_RES": 0.39,
+                    "SUPPLY_CHARGE": -0.06575
+                }
+            }
+        },
+        "2024-10-01": {
+            "plan": "PGE-TOU-C-BayArea",
+            "season": "Winter",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.44,
+                    "GRID_EXPORT": 0.44,
+                    "SELF_PW_NET_OF_GRID": 0.44,
+                    "SELF_SOLAR_PLUS_RES": 0.44,
+                    "SUPPLY_CHARGE": -0.06575
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.35,
+                    "GRID_EXPORT": 0.35,
+                    "SELF_PW_NET_OF_GRID": 0.35,
+                    "SELF_SOLAR_PLUS_RES": 0.35,
+                    "SUPPLY_CHARGE": -0.06575
+                }
+            }
+        },
+        "2025-06-01": {
+            "plan": "PGE-TOU-C-BayArea",
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.49,
+                    "GRID_EXPORT": 0.49,
+                    "SELF_PW_NET_OF_GRID": 0.49,
+                    "SELF_SOLAR_PLUS_RES": 0.49,
+                    "SUPPLY_CHARGE": -0.06575
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.39,
+                    "GRID_EXPORT": 0.39,
+                    "SELF_PW_NET_OF_GRID": 0.39,
+                    "SELF_SOLAR_PLUS_RES": 0.39,
+                    "SUPPLY_CHARGE": -0.06575
+                }
+            }
+        },
+        "2025-10-01": {
+            "season": "Winter"
+        }
+    }
+}
