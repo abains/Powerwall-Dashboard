@@ -1,0 +1,403 @@
+{
+    "settings": {
+        "influx_url": "http://localhost:8086",
+        "bucket": "powerwall/kwh",
+        "timezone": "America/Los_Angeles",
+        "supply_priority": [
+            "GRID_SUPPLY",
+            "PW_SUPPLY",
+            "SOLAR_SUPPLY"
+        ],
+        "cost_unit": "$",
+        "energy_unit": "kWh",
+        "rename": {
+            "GRID_SUPPLY": "Grid supply",
+            "GRID_EXPORT": "Grid export"
+        },
+        "resample": true,
+        "week_anchor": "MONTH",
+        "year_anchor": "JAN"
+    },
+    "plans": [
+        {
+            "name": "PGE-EV2A",
+            "report": [
+                "GRID_SUPPLY",
+                "GRID_EXPORT",
+                "SELF_PW_NET_OF_GRID",
+                "SELF_SOLAR_PLUS_RES"
+            ],
+            "agent": "Simple",
+            "seasons": {
+                "Summer": [
+                    {
+                        "schedule": "All Days",
+                        "days": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6
+                        ],
+                        "periods": {
+                            "00:00": "Off-Peak",
+                            "15:00": "Part-Peak",
+                            "16:00": "Peak",
+                            "21:00": "Part-Peak"
+                        }
+                    }
+                ],
+                "Winter": [
+                    {
+                        "schedule": "All Days",
+                        "days": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6
+                        ],
+                        "periods": {
+                            "00:00": "Off-Peak",
+                            "15:00": "Part-Peak",
+                            "16:00": "Peak",
+                            "21:00": "Part-Peak"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "calendar": {
+        "2020-01-01": {
+            "plan": "PGE-EV2A",
+            "season": "Winter",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.42,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.42,
+                    "SELF_SOLAR_PLUS_RES": 0.42,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.40,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.40,
+                    "SELF_SOLAR_PLUS_RES": 0.40,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.26,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.26,
+                    "SELF_SOLAR_PLUS_RES": 0.26,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2020-06-01": {
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.52,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.52,
+                    "SELF_SOLAR_PLUS_RES": 0.52,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.43,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.43,
+                    "SELF_SOLAR_PLUS_RES": 0.43,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.26,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.26,
+                    "SELF_SOLAR_PLUS_RES": 0.26,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2020-10-01": {
+            "season": "Winter"
+        },
+        "2021-01-01": {
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.43,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.43,
+                    "SELF_SOLAR_PLUS_RES": 0.43,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.41,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.41,
+                    "SELF_SOLAR_PLUS_RES": 0.41,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.27,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.27,
+                    "SELF_SOLAR_PLUS_RES": 0.27,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2021-06-01": {
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.54,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.54,
+                    "SELF_SOLAR_PLUS_RES": 0.54,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.44,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.44,
+                    "SELF_SOLAR_PLUS_RES": 0.44,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.27,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.27,
+                    "SELF_SOLAR_PLUS_RES": 0.27,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2021-10-01": {
+            "season": "Winter"
+        },
+        "2022-01-01": {
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.44,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.44,
+                    "SELF_SOLAR_PLUS_RES": 0.44,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.42,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.42,
+                    "SELF_SOLAR_PLUS_RES": 0.42,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.27,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.27,
+                    "SELF_SOLAR_PLUS_RES": 0.27,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2022-06-01": {
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.56,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.56,
+                    "SELF_SOLAR_PLUS_RES": 0.56,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.45,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.45,
+                    "SELF_SOLAR_PLUS_RES": 0.45,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.27,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.27,
+                    "SELF_SOLAR_PLUS_RES": 0.27,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2022-10-01": {
+            "season": "Winter"
+        },
+        "2023-01-01": {
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.46,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.46,
+                    "SELF_SOLAR_PLUS_RES": 0.46,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.44,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.44,
+                    "SELF_SOLAR_PLUS_RES": 0.44,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.28,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.28,
+                    "SELF_SOLAR_PLUS_RES": 0.28,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2023-06-01": {
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.58,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.58,
+                    "SELF_SOLAR_PLUS_RES": 0.58,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.47,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.47,
+                    "SELF_SOLAR_PLUS_RES": 0.47,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.28,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.28,
+                    "SELF_SOLAR_PLUS_RES": 0.28,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2023-10-01": {
+            "season": "Winter"
+        },
+        "2024-01-01": {
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.49,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.49,
+                    "SELF_SOLAR_PLUS_RES": 0.49,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.47,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.47,
+                    "SELF_SOLAR_PLUS_RES": 0.47,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.30,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.30,
+                    "SELF_SOLAR_PLUS_RES": 0.30,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2024-06-01": {
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.61,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.61,
+                    "SELF_SOLAR_PLUS_RES": 0.61,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.50,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.50,
+                    "SELF_SOLAR_PLUS_RES": 0.50,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.30,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.30,
+                    "SELF_SOLAR_PLUS_RES": 0.30,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2024-10-01": {
+            "season": "Winter"
+        },
+        "2025-01-01": {
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.51,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.51,
+                    "SELF_SOLAR_PLUS_RES": 0.51,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.49,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.49,
+                    "SELF_SOLAR_PLUS_RES": 0.49,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.31,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.31,
+                    "SELF_SOLAR_PLUS_RES": 0.31,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2025-06-01": {
+            "season": "Summer",
+            "tariffs": {
+                "Peak": {
+                    "GRID_SUPPLY": -0.63,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.63,
+                    "SELF_SOLAR_PLUS_RES": 0.63,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Part-Peak": {
+                    "GRID_SUPPLY": -0.52,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.52,
+                    "SELF_SOLAR_PLUS_RES": 0.52,
+                    "SUPPLY_CHARGE": -0.4838709677
+                },
+                "Off-Peak": {
+                    "GRID_SUPPLY": -0.31,
+                    "GRID_EXPORT": 0.03,
+                    "SELF_PW_NET_OF_GRID": 0.31,
+                    "SELF_SOLAR_PLUS_RES": 0.31,
+                    "SUPPLY_CHARGE": -0.4838709677
+                }
+            }
+        },
+        "2025-10-01": {
+            "season": "Winter"
+        }
+    }
+}
