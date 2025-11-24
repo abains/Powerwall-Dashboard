@@ -30,14 +30,44 @@ INFLUX_DB = os.getenv("INFLUXDB_DB", "powerwall")
 INSTALL_COST = float(os.getenv('PW_INSTALL_COST', 0))
 INSTALL_DATE = os.getenv('PW_INSTALL_DATE', '2021-01-01')
 
-# Rates (PG&E TOU-C 2024 approx)
-RATE_SUMMER_PEAK = float(os.getenv('PW_ROI_RATE_SUMMER_PEAK', 0.62))
-RATE_SUMMER_OFFPEAK = float(os.getenv('PW_ROI_RATE_SUMMER_OFFPEAK', 0.53))
-RATE_WINTER_PEAK = float(os.getenv('PW_ROI_RATE_WINTER_PEAK', 0.52))
-RATE_WINTER_OFFPEAK = float(os.getenv('PW_ROI_RATE_WINTER_OFFPEAK', 0.49))
+# Rates (PG&E TOU-C Historical Estimates)
+# Format: 'YYYY-MM-DD': {'summer_peak': X, 'summer_offpeak': Y, 'winter_peak': Z, 'winter_offpeak': W}
+# Rates are approximate based on public data and rate hikes.
+RATE_SCHEDULE = {
+    '2024-01-01': {
+        'summer_peak': float(os.getenv('PW_ROI_RATE_2024_SUMMER_PEAK', 0.62)),
+        'summer_offpeak': float(os.getenv('PW_ROI_RATE_2024_SUMMER_OFFPEAK', 0.53)),
+        'winter_peak': float(os.getenv('PW_ROI_RATE_2024_WINTER_PEAK', 0.52)),
+        'winter_offpeak': float(os.getenv('PW_ROI_RATE_2024_WINTER_OFFPEAK', 0.49))
+    },
+    '2023-01-01': {
+        'summer_peak': 0.58, 'summer_offpeak': 0.49,
+        'winter_peak': 0.48, 'winter_offpeak': 0.45
+    },
+    '2022-01-01': {
+        'summer_peak': 0.46, 'summer_offpeak': 0.39,
+        'winter_peak': 0.39, 'winter_offpeak': 0.36
+    },
+    '2021-01-01': {
+        'summer_peak': 0.43, 'summer_offpeak': 0.37,
+        'winter_peak': 0.36, 'winter_offpeak': 0.34
+    }
+}
 
 def get_rate(dt):
-    """Return the rate for a given datetime."""
+    """Return the rate for a given datetime based on historical schedule."""
+    # Find applicable rate period
+    # Sort dates descending
+    sorted_dates = sorted(RATE_SCHEDULE.keys(), reverse=True)
+    
+    current_rates = RATE_SCHEDULE[sorted_dates[-1]] # Default to oldest
+    
+    dt_str = dt.strftime('%Y-%m-%d')
+    for start_date in sorted_dates:
+        if dt_str >= start_date:
+            current_rates = RATE_SCHEDULE[start_date]
+            break
+            
     # Summer: June 1 - Sep 30
     is_summer = 6 <= dt.month <= 9
     
@@ -45,9 +75,9 @@ def get_rate(dt):
     is_peak = 16 <= dt.hour < 21
     
     if is_summer:
-        return RATE_SUMMER_PEAK if is_peak else RATE_SUMMER_OFFPEAK
+        return current_rates['summer_peak'] if is_peak else current_rates['summer_offpeak']
     else:
-        return RATE_WINTER_PEAK if is_peak else RATE_WINTER_OFFPEAK
+        return current_rates['winter_peak'] if is_peak else current_rates['winter_offpeak']
 
 def main():
     print(f"Connecting to InfluxDB at {INFLUX_HOST}:{INFLUX_PORT}...")
