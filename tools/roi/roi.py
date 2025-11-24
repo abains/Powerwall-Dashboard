@@ -5,6 +5,7 @@ import datetime
 from influxdb import InfluxDBClient
 from dateutil import parser
 import time
+import calendar
 from dotenv import load_dotenv
 
 # Configuration
@@ -29,28 +30,54 @@ INFLUX_PORT = int(os.getenv("INFLUXDB_PORT", 8086))
 INFLUX_DB = os.getenv("INFLUXDB_DB", "powerwall")
 INSTALL_COST = float(os.getenv('PW_INSTALL_COST', 0))
 INSTALL_DATE = os.getenv('PW_INSTALL_DATE', '2021-01-01')
+MEDICAL_BASELINE = os.getenv('PW_MEDICAL_BASELINE', 'false').lower() == 'true'
+BASELINE_DAILY_ALLOWANCE = float(os.getenv('PW_BASELINE_DAILY_ALLOWANCE', 15.0))
 
 # Rates (PG&E TOU-C Historical Estimates)
-# Format: 'YYYY-MM-DD': {'summer_peak': X, 'summer_offpeak': Y, 'winter_peak': Z, 'winter_offpeak': W}
+# Format: 'YYYY-MM-DD': {
+#   'summer_peak': {'tier_1': X, 'tier_2': Y},
+#   'summer_offpeak': {'tier_1': X, 'tier_2': Y},
+#   ...
+# }
 # Rates are approximate based on public data and rate hikes.
+# Current script defaults to Tier 2 (High usage) if Medical Baseline is False.
+# If Medical Baseline is True, we assume Tier 1 (High allowance) for avoided cost.
 RATE_SCHEDULE = {
     '2024-01-01': {
-        'summer_peak': float(os.getenv('PW_ROI_RATE_2024_SUMMER_PEAK', 0.62)),
-        'summer_offpeak': float(os.getenv('PW_ROI_RATE_2024_SUMMER_OFFPEAK', 0.53)),
-        'winter_peak': float(os.getenv('PW_ROI_RATE_2024_WINTER_PEAK', 0.52)),
-        'winter_offpeak': float(os.getenv('PW_ROI_RATE_2024_WINTER_OFFPEAK', 0.49))
+        'summer_peak': {
+            'tier_1': float(os.getenv('PW_ROI_RATE_2024_SUMMER_PEAK_TIER1', 0.51)),
+            'tier_2': float(os.getenv('PW_ROI_RATE_2024_SUMMER_PEAK_TIER2', 0.62))
+        },
+        'summer_offpeak': {
+            'tier_1': float(os.getenv('PW_ROI_RATE_2024_SUMMER_OFFPEAK_TIER1', 0.43)),
+            'tier_2': float(os.getenv('PW_ROI_RATE_2024_SUMMER_OFFPEAK_TIER2', 0.53))
+        },
+        'winter_peak': {
+            'tier_1': float(os.getenv('PW_ROI_RATE_2024_WINTER_PEAK_TIER1', 0.41)),
+            'tier_2': float(os.getenv('PW_ROI_RATE_2024_WINTER_PEAK_TIER2', 0.52))
+        },
+        'winter_offpeak': {
+            'tier_1': float(os.getenv('PW_ROI_RATE_2024_WINTER_OFFPEAK_TIER1', 0.38)),
+            'tier_2': float(os.getenv('PW_ROI_RATE_2024_WINTER_OFFPEAK_TIER2', 0.49))
+        }
     },
     '2023-01-01': {
-        'summer_peak': 0.58, 'summer_offpeak': 0.49,
-        'winter_peak': 0.48, 'winter_offpeak': 0.45
+        'summer_peak': {'tier_1': 0.49, 'tier_2': 0.58},
+        'summer_offpeak': {'tier_1': 0.42, 'tier_2': 0.49},
+        'winter_peak': {'tier_1': 0.41, 'tier_2': 0.48},
+        'winter_offpeak': {'tier_1': 0.38, 'tier_2': 0.45}
     },
     '2022-01-01': {
-        'summer_peak': 0.46, 'summer_offpeak': 0.39,
-        'winter_peak': 0.39, 'winter_offpeak': 0.36
+        'summer_peak': {'tier_1': 0.39, 'tier_2': 0.46},
+        'summer_offpeak': {'tier_1': 0.34, 'tier_2': 0.39},
+        'winter_peak': {'tier_1': 0.33, 'tier_2': 0.39},
+        'winter_offpeak': {'tier_1': 0.31, 'tier_2': 0.36}
     },
     '2021-01-01': {
-        'summer_peak': 0.43, 'summer_offpeak': 0.37,
-        'winter_peak': 0.36, 'winter_offpeak': 0.34
+        'summer_peak': {'tier_1': 0.36, 'tier_2': 0.43},
+        'summer_offpeak': {'tier_1': 0.31, 'tier_2': 0.37},
+        'winter_peak': {'tier_1': 0.30, 'tier_2': 0.36},
+        'winter_offpeak': {'tier_1': 0.28, 'tier_2': 0.34}
     }
 }
 
@@ -75,9 +102,11 @@ def get_rate(dt):
     is_peak = 16 <= dt.hour < 21
     
     if is_summer:
-        return current_rates['summer_peak'] if is_peak else current_rates['summer_offpeak']
+        rate_obj = current_rates['summer_peak'] if is_peak else current_rates['summer_offpeak']
     else:
-        return current_rates['winter_peak'] if is_peak else current_rates['winter_offpeak']
+        rate_obj = current_rates['winter_peak'] if is_peak else current_rates['winter_offpeak']
+        
+    return rate_obj
 
 def main():
     print(f"Connecting to InfluxDB at {INFLUX_HOST}:{INFLUX_PORT}...")
@@ -107,6 +136,9 @@ def main():
     last_dt = None
     payoff_date_past = None
     
+    current_month_idx = None
+    current_month_usage = 0.0
+    
     for point in points:
         dt = parser.parse(point['time'])
         energy = point['energy_kwh']
@@ -114,7 +146,27 @@ def main():
         if energy is None:
             energy = 0
             
-        rate = get_rate(dt)
+        # Monthly Usage Tracking for Tiered Rates
+        month_idx = dt.strftime('%Y-%m')
+        if month_idx != current_month_idx:
+            current_month_idx = month_idx
+            current_month_usage = 0.0
+            
+        current_month_usage += energy
+        
+        # Calculate Allowance
+        # Medical Baseline adds ~16.5 kWh/day (approx 500 kWh/month)
+        daily_allowance = BASELINE_DAILY_ALLOWANCE + (16.5 if MEDICAL_BASELINE else 0)
+        days_in_month = calendar.monthrange(dt.year, dt.month)[1]
+        monthly_allowance = daily_allowance * days_in_month
+        
+        # Determine Rate Tier
+        rate_obj = get_rate(dt)
+        if current_month_usage <= monthly_allowance:
+            rate = rate_obj['tier_1']
+        else:
+            rate = rate_obj['tier_2']
+            
         savings = energy * rate
         cumulative_savings += savings
         
@@ -187,7 +239,7 @@ def main():
         # Write payoff info (always write if cost is set)
         roi_points.append({
             "measurement": "roi_info",
-            "time": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            "time": datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             "fields": {
                 "payoff_date_str": payoff_str,
                 "days_remaining": float(days_remaining)
