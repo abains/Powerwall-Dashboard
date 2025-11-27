@@ -52,6 +52,7 @@ import signal
 import argparse
 import configparser
 import time
+import csv
 from datetime import datetime, timedelta
 try:
     from dateutil.relativedelta import relativedelta
@@ -95,6 +96,7 @@ group.add_argument('--start', help='start date and time ("YYYY-MM-DD hh:mm:ss")'
 group.add_argument('--end', help='end date and time ("YYYY-MM-DD hh:mm:ss")')
 group.add_argument('--today', action="store_true", help='set start/end range to "today"')
 group.add_argument('--yesterday', action="store_true", help='set start/end range to "yesterday"')
+group.add_argument('--csv', help='export history to csv file (specify filename prefix)')
 args = parser.parse_args()
 
 if args.version:
@@ -397,6 +399,10 @@ else:
 powerdata = []
 eventdata = []
 reservedata = []
+csv_power = []
+csv_soe = []
+csv_events = []
+csv_reserve = []
 powergaps = None
 gridgaps = None
 reservegaps = None
@@ -812,6 +818,19 @@ def get_power_history(start, end):
                     point += str(int(timestamp.timestamp()))
                     powerdata.append(point)
 
+                    if args.csv:
+                        # Save data point to CSV list
+                        csv_point = {
+                            'time': timestamp.astimezone(influxtz).isoformat(),
+                            'home': home,
+                            'solar': solar,
+                            'from_pw': from_pw,
+                            'to_pw': to_pw,
+                            'from_grid': from_grid,
+                            'to_grid': to_grid
+                        }
+                        csv_power.append(csv_point)
+
         if soe:
             for d in soe['time_series']:
                 timestamp = isoparse(d['timestamp']).astimezone(utctz)
@@ -824,6 +843,14 @@ def get_power_history(start, end):
                     point = f"http,source=cloud,month={timestamp.astimezone(influxtz).strftime('%b')},year={timestamp.astimezone(influxtz).year} percentage={percentage} "
                     point += str(int(timestamp.timestamp()))
                     powerdata.append(point)
+
+                    if args.csv:
+                        # Save data point to CSV list
+                        csv_point = {
+                            'time': timestamp.astimezone(influxtz).isoformat(),
+                            'soe': percentage
+                        }
+                        csv_soe.append(csv_point)
 
         # Increment to next day
         day += timedelta(days=1)
@@ -913,6 +940,14 @@ def get_backup_history(start, end):
         point += str(int(timestamp.timestamp()))
         eventdata.append(point)
 
+        if args.csv:
+            # Save data point to CSV list
+            csv_point = {
+                'time': timestamp.astimezone(influxtz).isoformat(),
+                'grid_status': grid_status
+            }
+            csv_events.append(csv_point)
+
 def set_reserve_history(start, end):
     """
     Create backup reserve percent history between start and end date/time
@@ -948,6 +983,14 @@ def set_reserve_history(start, end):
         point = f"http,source=cloud,month={timestamp.astimezone(influxtz).strftime('%b')},year={timestamp.astimezone(influxtz).year} backup_reserve_percent={backup_reserve_percent} "
         point += str(int(timestamp.timestamp()))
         reservedata.append(point)
+
+        if args.csv:
+            # Save data point to CSV list
+            csv_point = {
+                'time': timestamp.astimezone(influxtz).isoformat(),
+                'backup_reserve_percent': backup_reserve_percent
+            }
+            csv_reserve.append(csv_point)
 
 # InfluxDB Functions
 def search_influx(start, end, datatype):
@@ -1180,6 +1223,46 @@ def remove_influx(start, end):
             queryerr = True
             sys.stderr.write(f" ! InfluxDB query failed, retrying in {RETRY} seconds\n")
             sys.stderr.flush()
+
+def write_csv(filename):
+    """
+    Write collected data to CSV files
+    """
+    if csv_power:
+        fname = f"{filename}.csv"
+        print(f"Writing {len(csv_power)} records to {fname}")
+        keys = csv_power[0].keys()
+        with open(fname, 'w', newline='') as f:
+            dict_writer = csv.DictWriter(f, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(csv_power)
+
+    if csv_soe:
+        fname = f"{filename}-soe.csv"
+        print(f"Writing {len(csv_soe)} records to {fname}")
+        keys = csv_soe[0].keys()
+        with open(fname, 'w', newline='') as f:
+            dict_writer = csv.DictWriter(f, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(csv_soe)
+
+    if csv_events:
+        fname = f"{filename}-events.csv"
+        print(f"Writing {len(csv_events)} records to {fname}")
+        keys = csv_events[0].keys()
+        with open(fname, 'w', newline='') as f:
+            dict_writer = csv.DictWriter(f, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(csv_events)
+
+    if csv_reserve:
+        fname = f"{filename}-reserve.csv"
+        print(f"Writing {len(csv_reserve)} records to {fname}")
+        keys = csv_reserve[0].keys()
+        with open(fname, 'w', newline='') as f:
+            dict_writer = csv.DictWriter(f, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(csv_reserve)
 
 def write_influx():
     """
@@ -1445,6 +1528,26 @@ if not args.daemon:
 
 # Get site info
 site = siteinfo['site']
+
+if args.csv:
+    # Retrieve power history data between start and end date/time (skip search for gaps)
+    get_power_history(start, end)
+    print()
+
+    if isinstance(site, Battery):
+        # Retrieve backup history data between start and end date/time (skip search for gaps)
+        get_backup_history(start, end)
+        print()
+
+        if args.reserve is not None:
+            # Set backup reserve percent history data
+            set_reserve_history(start, end)
+            print()
+
+    # Write data to CSV files
+    write_csv(args.csv)
+    print("Done.")
+    sys_exit()
 
 if args.force:
     # Retrieve power history data between start and end date/time (skip search for gaps)
